@@ -1,4 +1,4 @@
-# 🌰 Hazelnut AI  
+# 🌰 HazelnutPilot AI  
 *Built by Vaidehi Kulkarni for Mosaic Buildathon 2025*  
 
 ---
