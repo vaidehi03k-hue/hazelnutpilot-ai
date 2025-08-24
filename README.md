@@ -35,3 +35,43 @@ Upload a PRD → AI generates runnable tests → one-click run with Playwright �
 - Playwright browsers:  
   ```bash
   npx playwright install --with-deps
+---
+
+### 💻 Use these commands to execute on your local
+
+Backend
+- cd server
+- npm install
+- npm run dev
+
+Frontend
+- cd ui
+- npm install
+- npm run dev
+
+Now open http://localhost:5173 in your browser.
+
+---
+
+## 📈 Demo Scenario
+- ✅ Valid login (pass)
+- ✅ Invalid login (pass)
+- ✅ Locked-out user (pass)
+- ❌ Intentional fail: 'Welcome, Vaidehi'
+- Dashboard shows 3 passes, 1 fail.
+
+---
+  
+## 🔮 Future Scope
+- Real device/browser farm integration
+- CI/CD integrations (GitHub Actions, GitLab CI)
+A- dvanced AI evals: flaky test detection, self-healing tests
+
+---
+
+## 🏆 Hackathon Context  
+
+**Track:** AI Agents & Workflow Automation  
+**Built in:** under 48h for Mosaic Buildathon 2025  
+**Goal:** Solve a real QA pain point with AI  
+
