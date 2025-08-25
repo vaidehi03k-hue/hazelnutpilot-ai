@@ -30,28 +30,46 @@ async function extractText(filePath, originalName) {
   const ext = (path.extname(originalName || filePath) || '').toLowerCase();
   if (ext === '.txt' || ext === '.md') return fs.readFileSync(filePath, 'utf8');
   if (ext === '.pdf') {
-   if (filePath.endsWith(".pdf")) {
-      const pdfParse = require("pdf-parse"); // require here
-      const dataBuffer = fs.readFileSync(filePath);
-      const pdfData = await pdfParse(dataBuffer);
-  text = pdfData.text;
-}
-    return data.text;
+    const pdfParse = (await import('pdf-parse')).default;
+    const dataBuffer = fs.readFileSync(filePath);
+    const pdfData = await pdfParse(dataBuffer);
+    return pdfData.text || '';
   }
   if (ext === '.docx') return await parseDocx(filePath);
   return fs.readFileSync(filePath, 'utf8');
 }
 
 async function ollama(prompt) {
-  // Node 18+ has global fetch
-  const res = await fetch('http://localhost:11434/api/generate', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ model: 'llama3', prompt, stream: false })
-  }).catch(() => null);
-  if (!res) return '{"tests":[]}';
-  const json = await res.json();
-  return json.response || '{"tests":[]}';
+  // Hosted inference via Hugging Face Inference API (no local Ollama needed)
+  const HF_TOKEN = process.env.HF_TOKEN;
+  const HF_MODEL = process.env.HF_MODEL || "HuggingFaceH4/zephyr-7b-beta";
+  if (!HF_TOKEN) {
+    console.warn("HF_TOKEN not set; returning empty tests.");
+    return '{"tests":[]}';
+  }
+  try {
+    const res = await fetch(`https://api-inference.huggingface.co/models/${encodeURIComponent(HF_MODEL)}`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${HF_TOKEN}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        inputs: prompt,
+        parameters: { max_new_tokens: 400, temperature: 0.3 }
+      })
+    });
+    const json = await res.json();
+    let text = "";
+    if (Array.isArray(json) && json[0]?.generated_text) text = json[0].generated_text;
+    else if (typeof json.generated_text === "string") text = json.generated_text;
+    else if (typeof json === "string") text = json;
+    else text = JSON.stringify(json);
+    return text || '{"tests":[]}';
+  } catch (e) {
+    console.error("HF inference error:", e);
+    return '{"tests":[]}';
+  }
 }
 
 /* ---------------- Projects ---------------- */
@@ -205,3 +223,8 @@ app.get('/api/viewer/:token', (req, res) => {
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, ()=> console.log('QA Pilot server on', PORT, '— Built by Vaidehi Kulkarni for Mosaic Buildathon'));
+
+
+// Serve built UI in production (ui/dist)
+app.use(express.static(path.join(__dirname, '../ui/dist')));
+app.get('*', (_, res) => res.sendFile(path.join(__dirname, '../ui/dist/index.html')));
